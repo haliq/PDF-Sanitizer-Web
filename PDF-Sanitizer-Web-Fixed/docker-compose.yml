@@ -1,0 +1,14 @@
+services:
+  pdf-sanitizer:
+    build: .
+    container_name: pdf-sanitizer
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      PDF_SANITIZER_DATA_DIR: /data
+      PDF_SANITIZER_MAX_FILE_SIZE: 52428800
+      PDF_SANITIZER_MAX_FILES: 100
+      PDF_SANITIZER_WORKERS: 4
+    volumes:
+      - ./data:/data

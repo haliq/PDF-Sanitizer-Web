@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sanitasi PDF untuk menghapus URI, JavaScript, OpenAction, dan objek interaktif sebelum diunggah ke JKN Drive BPJS.">
+  <title>PDF Sanitizer</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2 4.5 5.2v5.4c0 5.2 3.2 9.8 7.5 11.4 4.3-1.6 7.5-6.2 7.5-11.4V5.2L12 2Zm3.4 7.2-4.1 5.1a1 1 0 0 1-1.5.1l-2.2-2.1 1.4-1.4 1.4 1.3 3.5-4.3 1.5 1.3Z"/></svg>
+        </div>
+        <div>
+          <strong>PDF Sanitizer</strong>
+          <span>JKN Drive / BPJS</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="Tahapan proses">
+        <button class="nav-item active" data-step="upload" type="button">
+          <span class="nav-number">1</span>
+          <span><b>Upload</b><small>Pilih berkas PDF</small></span>
+        </button>
+        <button class="nav-item" data-step="scan" type="button">
+          <span class="nav-number">2</span>
+          <span><b>Scan</b><small>Periksa objek berbahaya</small></span>
+        </button>
+        <button class="nav-item" data-step="sanitize" type="button">
+          <span class="nav-number">3</span>
+          <span><b>Sanitize</b><small>Buat PDF bersih</small></span>
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg>
+        <p>Proses sanitasi meraster setiap halaman. Teks hasil dapat tidak lagi dapat dipilih atau dicari.</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="icon-button mobile-only" id="menuButton" type="button" aria-label="Buka menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div>
+          <p class="eyebrow">UTILITAS DOKUMEN</p>
+          <h1 id="pageTitle">Upload PDF</h1>
+          <p id="pageSubtitle">Unggah satu atau beberapa PDF yang akan diperiksa.</p>
+        </div>
+        <div class="health-pill" id="healthPill" title="Status server">
+          <span class="health-dot"></span>
+          <span>Memeriksa server…</span>
+        </div>
+      </header>
+
+      <section class="step-panel active" id="step-upload">
+        <div class="hero-card">
+          <div class="hero-copy">
+            <span class="hero-badge">AMAN · CEPAT · BATCH</span>
+            <h2>Bersihkan PDF sebelum diunggah ke JKN Drive</h2>
+            <p>Mendeteksi dan menghilangkan URI, JavaScript, OpenAction, Embedded File, Launch Action, dan objek interaktif lainnya.</p>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <div class="pdf-sheet"><span>PDF</span></div>
+            <div class="shield-check">✓</div>
+          </div>
+        </div>
+
+        <div class="card upload-card">
+          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Pilih atau jatuhkan file PDF">
+            <input id="fileInput" type="file" accept="application/pdf,.pdf" multiple hidden>
+            <div class="upload-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M19.4 10.2A7.5 7.5 0 0 0 5 8.4 5.5 5.5 0 0 0 5.5 19H10v-2H5.5a3.5 3.5 0 0 1-.1-7l1.3-.1.4-1.2A5.5 5.5 0 0 1 17.8 10l.2 1.2 1.2.2A2.8 2.8 0 0 1 18.8 17H14v2h4.8a4.8 4.8 0 0 0 .6-8.8ZM13 12.4l2.3 2.3 1.4-1.4L12 8.6l-4.7 4.7 1.4 1.4 2.3-2.3V21h2v-8.6Z"/></svg>
+            </div>
+            <h3>Tarik dan jatuhkan PDF di sini</h3>
+            <p>atau klik untuk memilih file dari komputer</p>
+            <button class="btn btn-secondary" id="chooseButton" type="button">Pilih File PDF</button>
+            <small id="uploadLimit">Maksimal 50 MB per file · 100 file per sesi</small>
+          </div>
+
+          <div class="queue" id="queue" hidden>
+            <div class="card-heading">
+              <div>
+                <h3>Antrean Upload</h3>
+                <p><span id="queueCount">0</span> file siap dikirim</p>
+              </div>
+              <button class="text-button danger" id="clearQueueButton" type="button">Hapus semua</button>
+            </div>
+            <div class="queue-list" id="queueList"></div>
+            <div class="upload-progress" id="uploadProgress" hidden>
+              <div class="progress-meta"><span id="uploadProgressText">Mengupload…</span><strong id="uploadPercent">0%</strong></div>
+              <div class="progress-track"><div class="progress-fill" id="uploadBar"></div></div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary" id="uploadButton" type="button">Upload dan Lanjutkan</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="step-panel" id="step-scan">
+        <div class="stats-grid" id="scanStats">
+          <article class="stat-card"><span>Total PDF</span><strong id="statTotal">0</strong></article>
+          <article class="stat-card danger"><span>Bermasalah</span><strong id="statUnsafe">0</strong></article>
+          <article class="stat-card success"><span>Aman</span><strong id="statSafe">0</strong></article>
+          <article class="stat-card warning"><span>URI</span><strong id="statUri">0</strong></article>
+          <article class="stat-card purple"><span>JavaScript</span><strong id="statJs">0</strong></article>
+        </div>
+
+        <div class="card">
+          <div class="card-heading scan-heading">
+            <div>
+              <h3>Hasil Pemeriksaan PDF</h3>
+              <p>Centang file yang akan dibersihkan.</p>
+            </div>
+            <div class="heading-actions">
+              <button class="btn btn-secondary" id="clearSessionButton" type="button">Bersihkan Sesi</button>
+              <button class="btn btn-primary" id="scanButton" type="button">Scan Semua File</button>
+            </div>
+          </div>
+
+          <div class="scan-progress" id="scanProgress" hidden>
+            <div class="progress-meta"><span id="scanProgressText">Memindai PDF…</span><strong id="scanPercent">0%</strong></div>
+            <div class="progress-track"><div class="progress-fill" id="scanBar"></div></div>
+          </div>
+
+          <div class="table-toolbar">
+            <div class="filter-group" role="group" aria-label="Filter hasil scan">
+              <button class="filter-button active" data-filter="all" type="button">Semua</button>
+              <button class="filter-button" data-filter="unsafe" type="button">Bermasalah</button>
+              <button class="filter-button" data-filter="safe" type="button">Aman</button>
+            </div>
+            <span class="selection-label" id="selectionLabel">0 file dipilih</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="check-cell"><input id="selectAll" type="checkbox" aria-label="Pilih semua file"></th>
+                  <th>Nama File</th>
+                  <th>Ukuran</th>
+                  <th>Halaman</th>
+                  <th>Temuan</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="scanTableBody">
+                <tr class="empty-row"><td colspan="6">Upload file terlebih dahulu, lalu jalankan pemeriksaan.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card-actions split">
+            <p>PDF aman tetap dapat diproses untuk memastikan seluruh objek interaktif hilang.</p>
+            <button class="btn btn-primary" id="continueButton" type="button" disabled>Lanjut ke Sanitasi</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="step-panel" id="step-sanitize">
+        <div class="sanitize-grid">
+          <div class="card config-card">
+            <div class="card-heading">
+              <div><h3>Pengaturan Sanitasi</h3><p>Pilih kualitas render hasil PDF.</p></div>
+            </div>
+            <div class="config-body">
+              <label class="field-label">Resolusi PDF</label>
+              <div class="dpi-options" id="dpiOptions">
+                <button type="button" data-dpi="100"><strong>100 DPI</strong><small>File kecil</small></button>
+                <button type="button" class="active" data-dpi="150"><strong>150 DPI</strong><small>Disarankan</small></button>
+                <button type="button" data-dpi="200"><strong>200 DPI</strong><small>Lebih tajam</small></button>
+                <button type="button" data-dpi="300"><strong>300 DPI</strong><small>Kualitas tinggi</small></button>
+              </div>
+
+              <div class="summary-box">
+                <div><span>File diproses</span><strong id="sanitizeFileCount">0</strong></div>
+                <div><span>Resolusi</span><strong id="sanitizeDpi">150 DPI</strong></div>
+                <div><span>Metode</span><strong>Flatten / Raster</strong></div>
+              </div>
+
+              <button class="btn btn-primary btn-large" id="sanitizeButton" type="button">Mulai Sanitasi</button>
+            </div>
+          </div>
+
+          <div class="card progress-card">
+            <div class="card-heading">
+              <div><h3>Progres Pekerjaan</h3><p id="jobStatusText">Belum dimulai.</p></div>
+            </div>
+            <div class="job-progress-body">
+              <div class="progress-ring" id="progressRing" style="--progress:0">
+                <div><strong id="jobPercent">0%</strong><span>selesai</span></div>
+              </div>
+              <div class="job-metrics">
+                <div><span>Berhasil</span><strong class="success-text" id="jobSuccess">0</strong></div>
+                <div><span>Gagal</span><strong class="danger-text" id="jobFailed">0</strong></div>
+                <div><span>Sisa waktu</span><strong id="jobEta">—</strong></div>
+              </div>
+            </div>
+            <div class="job-log" id="jobLog"><p>Log proses akan muncul di sini.</p></div>
+            <div class="card-actions">
+              <a class="btn btn-success disabled" id="downloadButton" href="#" aria-disabled="true">Download Hasil ZIP</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+  <script src="/app.js" defer></script>
+</body>
+</html>

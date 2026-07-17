@@ -1,0 +1,5 @@
+PyMuPDF>=1.24,<1.27
+pikepdf>=9.0,<10.0
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.32,<1.0
+python-multipart>=0.0.12,<1.0
